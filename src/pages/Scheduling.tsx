@@ -41,24 +41,19 @@ const Scheduling = () => {
     return currentHour >= startHour && currentHour < endHour;
   };
 
-  const getShiftForTimeSlot = (time: string, dayIndex: number) => {
-    const dayMapping = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const getShiftsStartingAtTime = (time: string, dayIndex: number) => {
     const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16"; // Simplified for demo
     
-    return mockShifts.find(shift => {
-      return shift.date === targetDate && isTimeInShift(time, shift);
+    return mockShifts.filter(shift => {
+      const currentHour = parseInt(time.split(':')[0]);
+      const startHour = parseInt(shift.startTime.split(':')[0]);
+      return shift.date === targetDate && currentHour === startHour;
     });
   };
 
   const getEmployeeName = (employeeId: number) => {
     const employee = mockEmployees.find(emp => emp.id === employeeId);
     return employee ? employee.name : '';
-  };
-
-  const isFirstTimeSlotOfShift = (time: string, shift: any) => {
-    const currentHour = parseInt(time.split(':')[0]);
-    const startHour = parseInt(shift.startTime.split(':')[0]);
-    return currentHour === startHour;
   };
 
   const getShiftHeight = (shift: any) => {
@@ -153,21 +148,32 @@ const Scheduling = () => {
                 <div key={time} className="grid grid-cols-8 border-b border-border hover:bg-muted/30">
                   <div className="p-4 text-sm text-muted-foreground font-medium">{time}</div>
                   {daysOfWeek.map((day, dayIndex) => {
-                    const shift = getShiftForTimeSlot(time, dayIndex);
+                    const startingShifts = getShiftsStartingAtTime(time, dayIndex);
                     return (
                       <div 
                         key={`${day}-${time}`} 
                         className="p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative"
                       >
-                        {shift && isFirstTimeSlotOfShift(time, shift) && (
-                          <div 
-                            className={`absolute top-2 left-2 right-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10`}
-                            style={{ height: `${getShiftHeight(shift) - 8}px` }}
-                          >
-                            <div className="font-medium">{getEmployeeName(shift.employeeId)}</div>
-                            <div className="text-muted-foreground">{shift.startTime} - {shift.endTime}</div>
-                          </div>
-                        )}
+                        {startingShifts.map((shift, index) => {
+                          const totalShifts = startingShifts.length;
+                          const widthPercent = 100 / totalShifts;
+                          const leftPercent = (index * widthPercent);
+                          
+                          return (
+                            <div 
+                              key={shift.id}
+                              className={`absolute top-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10`}
+                              style={{ 
+                                height: `${getShiftHeight(shift) - 8}px`,
+                                width: `${widthPercent - 2}%`,
+                                left: `${leftPercent + 1}%`
+                              }}
+                            >
+                              <div className="font-medium">{getEmployeeName(shift.employeeId)}</div>
+                              <div className="text-muted-foreground">{shift.startTime} - {shift.endTime}</div>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
