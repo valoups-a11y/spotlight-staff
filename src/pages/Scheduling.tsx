@@ -54,6 +54,19 @@ const Scheduling = () => {
     return employee ? employee.name : '';
   };
 
+  const isFirstTimeSlotOfShift = (time: string, shift: any) => {
+    const currentHour = parseInt(time.split(':')[0]);
+    const startHour = parseInt(shift.startTime.split(':')[0]);
+    return currentHour === startHour;
+  };
+
+  const getShiftHeight = (shift: any) => {
+    const startHour = parseInt(shift.startTime.split(':')[0]);
+    const endHour = parseInt(shift.endTime.split(':')[0]);
+    const duration = endHour - startHour;
+    return duration * 60; // 60px per hour (min-h-[60px])
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -145,8 +158,11 @@ const Scheduling = () => {
                         key={`${day}-${time}`} 
                         className="p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative"
                       >
-                        {shift && (
-                          <div className={`p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift`}>
+                        {shift && isFirstTimeSlotOfShift(time, shift) && (
+                          <div 
+                            className={`absolute top-2 left-2 right-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10`}
+                            style={{ height: `${getShiftHeight(shift) - 8}px` }}
+                          >
                             <div className="font-medium">{getEmployeeName(shift.employeeId)}</div>
                             <div className="text-muted-foreground">{shift.startTime} - {shift.endTime}</div>
                           </div>
