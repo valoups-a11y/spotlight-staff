@@ -127,6 +127,7 @@ const Scheduling = () => {
                         <div className={`p-2 rounded-lg text-xs ${getShiftTypeClass('morning')} shadow-shift`}>
                           <div className="font-medium">Sarah Johnson</div>
                           <div className="text-muted-foreground">09:00 - 17:00</div>
+                          <div className="text-xs font-medium">8h planned</div>
                         </div>
                       )}
                       {time === "11:00" && dayIndex === 0 && (
