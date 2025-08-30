@@ -18,6 +18,7 @@ const mockShifts = [
   { id: 3, employeeId: 3, date: "2024-01-16", startTime: "17:00", endTime: "23:00", type: "evening" },
   { id: 4, employeeId: 4, date: "2024-01-15", startTime: "12:00", endTime: "20:00", type: "afternoon" },
   { id: 5, employeeId: 4, date: "2024-01-16", startTime: "17:00", endTime: "23:00", type: "evening" },
+  { id: 6, employeeId: 2, date: "2024-01-16", startTime: "11:00", endTime: "19:00", type: "afternoon" },
 ];
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
