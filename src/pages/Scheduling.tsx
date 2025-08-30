@@ -27,6 +27,73 @@ const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(9 + i).padStart
 const Scheduling = () => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
+  // Utility to convert time string to minutes since midnight
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Compute layout for overlapping shifts on a given day
+  const computeDayLayout = (dayIndex: number) => {
+    const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16";
+    const dayShifts = mockShifts.filter(shift => shift.date === targetDate);
+    
+    // Convert shifts to intervals with minutes
+    type IntervalType = {
+      id: number;
+      start: number;
+      end: number;
+      shift: any;
+      column?: number;
+    };
+    
+    const intervals: IntervalType[] = dayShifts.map(shift => ({
+      id: shift.id,
+      start: timeToMinutes(shift.startTime),
+      end: timeToMinutes(shift.endTime),
+      shift
+    })).sort((a, b) => a.start - b.start);
+
+    const layout = new Map();
+    const activeShifts: IntervalType[] = [];
+    
+    for (const interval of intervals) {
+      // Remove finished shifts from active set
+      while (activeShifts.length > 0 && activeShifts[0].end <= interval.start) {
+        activeShifts.shift();
+      }
+      
+      // Find smallest available column
+      const usedColumns = new Set(activeShifts.map(s => s.column).filter(c => c !== undefined));
+      let column = 0;
+      while (usedColumns.has(column)) {
+        column++;
+      }
+      
+      // Assign column to this shift
+      interval.column = column;
+      activeShifts.push(interval);
+      activeShifts.sort((a, b) => a.end - b.end);
+      
+      // Calculate total columns for all overlapping shifts
+      const maxColumn = Math.max(...activeShifts.map(s => s.column!));
+      const totalColumns = maxColumn + 1;
+      
+      // Update layout for all active shifts
+      activeShifts.forEach(activeShift => {
+        layout.set(activeShift.id, {
+          colIndex: activeShift.column!,
+          totalColumns: totalColumns
+        });
+      });
+    }
+    
+    return layout;
+  };
+
+  // Precompute layouts for all days
+  const dayLayouts = daysOfWeek.map((_, dayIndex) => computeDayLayout(dayIndex));
+
   const getShiftTypeClass = (type: string) => {
     switch (type) {
       case 'morning': return 'bg-shift-morning border-l-4 border-l-primary';
@@ -36,15 +103,8 @@ const Scheduling = () => {
     }
   };
 
-  const isTimeInShift = (time: string, shift: any) => {
-    const currentHour = parseInt(time.split(':')[0]);
-    const startHour = parseInt(shift.startTime.split(':')[0]);
-    const endHour = parseInt(shift.endTime.split(':')[0]);
-    return currentHour >= startHour && currentHour < endHour;
-  };
-
   const getShiftsStartingAtTime = (time: string, dayIndex: number) => {
-    const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16"; // Simplified for demo
+    const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16";
     
     return mockShifts.filter(shift => {
       const currentHour = parseInt(time.split(':')[0]);
@@ -156,23 +216,27 @@ const Scheduling = () => {
                         key={`${day}-${time}`} 
                         className="p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative"
                       >
-                        {startingShifts.map((shift, index) => {
-                          const totalShifts = startingShifts.length;
-                          const widthPercent = 100 / totalShifts;
-                          const leftPercent = (index * widthPercent);
+                        {startingShifts.map((shift) => {
+                          const layout = dayLayouts[dayIndex].get(shift.id);
+                          if (!layout) return null;
+                          
+                          const { colIndex, totalColumns } = layout;
+                          const widthPercent = 100 / totalColumns;
+                          const leftPercent = colIndex * widthPercent;
                           
                           return (
                             <div 
                               key={shift.id}
-                              className={`absolute top-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10`}
+                              className={`absolute top-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20`}
                               style={{ 
                                 height: `${getShiftHeight(shift) - 8}px`,
-                                width: `${widthPercent - 2}%`,
-                                left: `${leftPercent + 1}%`
+                                width: `${widthPercent - 1}%`,
+                                left: `${leftPercent + 0.5}%`
                               }}
                             >
-                              <div className="font-medium">{getEmployeeName(shift.employeeId)}</div>
-                              <div className="text-muted-foreground">{shift.startTime} - {shift.endTime}</div>
+                              <div className="font-medium text-xs mb-1">{getEmployeeName(shift.employeeId)}</div>
+                              <div className="text-[10px] opacity-75">{shift.startTime}</div>
+                              <div className="text-[10px] opacity-75">{shift.endTime}</div>
                             </div>
                           );
                         })}
