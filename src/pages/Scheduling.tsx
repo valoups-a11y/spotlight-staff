@@ -26,6 +26,7 @@ const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(9 + i).padStart
 
 const Scheduling = () => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [hideLastName, setHideLastName] = useState(false);
 
   // Utility to convert time string to minutes since midnight
   const timeToMinutes = (time: string) => {
@@ -115,7 +116,8 @@ const Scheduling = () => {
 
   const getEmployeeName = (employeeId: number) => {
     const employee = mockEmployees.find(emp => emp.id === employeeId);
-    return employee ? employee.name : '';
+    if (!employee) return '';
+    return hideLastName ? employee.name.split(' ')[0] : employee.name;
   };
 
   const getShiftHeight = (shift: any) => {
@@ -145,10 +147,19 @@ const Scheduling = () => {
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-          <Button className="bg-gradient-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Shift
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setHideLastName(!hideLastName)}
+            >
+              {hideLastName ? 'Show' : 'Hide'} Last Names
+            </Button>
+            <Button className="bg-gradient-primary">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Shift
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -196,8 +207,8 @@ const Scheduling = () => {
           <div className="overflow-x-auto">
             <div className="min-w-[1000px]">
               {/* Header row */}
-              <div className="grid grid-cols-8 border-b border-border">
-                <div className="p-4 font-medium text-muted-foreground">Time</div>
+              <div className="grid border-b border-border" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+                <div className="p-2 font-medium text-muted-foreground text-sm">Time</div>
                 {daysOfWeek.map((day) => (
                   <div key={day} className="p-4 font-medium text-center border-l border-border">
                     {day}
@@ -207,8 +218,8 @@ const Scheduling = () => {
 
               {/* Time slots */}
               {timeSlots.map((time) => (
-                <div key={time} className="grid grid-cols-8 border-b border-border hover:bg-muted/30">
-                  <div className="p-4 text-sm text-muted-foreground font-medium">{time}</div>
+                <div key={time} className="grid border-b border-border hover:bg-muted/30" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+                  <div className="p-2 text-xs text-muted-foreground font-medium">{time}</div>
                   {daysOfWeek.map((day, dayIndex) => {
                     const startingShifts = getShiftsStartingAtTime(time, dayIndex);
                     return (
