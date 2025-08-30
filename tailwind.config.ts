@@ -63,6 +63,7 @@ export default {
 				},
 				shift: {
 					morning: 'hsl(var(--shift-morning))',
+					'morning-border': 'hsl(var(--shift-morning-border))',
 					afternoon: 'hsl(var(--shift-afternoon))',
 					evening: 'hsl(var(--shift-evening))',
 					break: 'hsl(var(--shift-break))'

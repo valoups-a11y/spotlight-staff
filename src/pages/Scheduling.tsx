@@ -97,7 +97,7 @@ const Scheduling = () => {
 
   const getShiftTypeClass = (type: string) => {
     switch (type) {
-      case 'morning': return 'bg-shift-morning border-l-4 border-l-primary';
+      case 'morning': return 'bg-shift-morning border-l-4 border-l-shift-morning-border';
       case 'afternoon': return 'bg-shift-afternoon border-l-4 border-l-warning';
       case 'evening': return 'bg-shift-evening border-l-4 border-l-destructive';
       default: return 'bg-muted';
@@ -267,7 +267,7 @@ const Scheduling = () => {
           <div className="flex items-center gap-6">
             <span className="text-sm font-medium text-muted-foreground">Shift Types:</span>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-shift-morning rounded border-l-2 border-l-primary"></div>
+              <div className="w-4 h-4 bg-shift-morning rounded border-l-2 border-l-shift-morning-border"></div>
               <span className="text-sm">Morning</span>
             </div>
             <div className="flex items-center gap-2">

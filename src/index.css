@@ -42,6 +42,7 @@ All colors MUST be HSL for proper theming.
 
     /* Scheduling specific colors */
     --shift-morning: 200 85% 85%;
+    --shift-morning-border: 200 80% 50%;
     --shift-afternoon: 25 85% 88%;
     --shift-evening: 15 80% 85%;
     --shift-break: 0 0% 85%;
@@ -118,6 +119,7 @@ All colors MUST be HSL for proper theming.
 
     /* Dark mode scheduling colors */
     --shift-morning: 200 70% 25%;
+    --shift-morning-border: 200 60% 45%;
     --shift-afternoon: 25 65% 25%;
     --shift-evening: 15 60% 25%;
     --shift-break: 0 0% 25%;
