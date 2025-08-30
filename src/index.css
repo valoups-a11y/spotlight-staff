@@ -2,39 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Restaurant Management Design System
+All colors MUST be HSL for proper theming.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 20 15% 97%;
+    --foreground: 20 8% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 20 8% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 20 8% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Restaurant brand colors - warm orange palette */
+    --primary: 25 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 25 90% 65%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 20 15% 92%;
+    --secondary-foreground: 20 8% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 20 10% 95%;
+    --muted-foreground: 20 5% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 25 70% 88%;
+    --accent-foreground: 25 85% 35%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 140 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 85% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Scheduling specific colors */
+    --shift-morning: 45 90% 85%;
+    --shift-afternoon: 25 85% 88%;
+    --shift-evening: 15 80% 85%;
+    --shift-break: 0 0% 85%;
+
+    --border: 20 20% 88%;
+    --input: 20 20% 92%;
+    --ring: 25 85% 55%;
 
     --radius: 0.5rem;
 
@@ -56,33 +70,46 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 20 8% 8%;
+    --foreground: 20 15% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 20 8% 12%;
+    --card-foreground: 20 15% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 20 8% 12%;
+    --popover-foreground: 20 15% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 25 85% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 25 90% 70%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 20 8% 18%;
+    --secondary-foreground: 20 15% 85%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 20 8% 15%;
+    --muted-foreground: 20 10% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 20 8% 20%;
+    --accent-foreground: 25 85% 65%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --success: 140 60% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 85% 60%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Dark mode scheduling colors */
+    --shift-morning: 45 70% 25%;
+    --shift-afternoon: 25 65% 25%;
+    --shift-evening: 15 60% 25%;
+    --shift-break: 0 0% 25%;
+
+    --border: 20 8% 20%;
+    --input: 20 8% 18%;
+    --ring: 25 85% 60%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -94,12 +121,48 @@ All colors MUST be HSL.
   }
 }
 
+/* Gradients for restaurant management */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-shift: linear-gradient(90deg, hsl(var(--shift-morning)), hsl(var(--shift-afternoon)));
+
+    /* Shadows for depth */
+    --shadow-elegant: 0 4px 20px -4px hsl(var(--primary) / 0.1);
+    --shadow-card: 0 2px 8px -2px hsl(var(--foreground) / 0.1);
+    --shadow-shift: 0 2px 4px -1px hsl(var(--foreground) / 0.15);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.75rem;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-medium;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
   }
 }
