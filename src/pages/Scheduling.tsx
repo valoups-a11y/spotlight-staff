@@ -33,6 +33,27 @@ const Scheduling = () => {
     }
   };
 
+  const isTimeInShift = (time: string, shift: any) => {
+    const currentHour = parseInt(time.split(':')[0]);
+    const startHour = parseInt(shift.startTime.split(':')[0]);
+    const endHour = parseInt(shift.endTime.split(':')[0]);
+    return currentHour >= startHour && currentHour < endHour;
+  };
+
+  const getShiftForTimeSlot = (time: string, dayIndex: number) => {
+    const dayMapping = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16"; // Simplified for demo
+    
+    return mockShifts.find(shift => {
+      return shift.date === targetDate && isTimeInShift(time, shift);
+    });
+  };
+
+  const getEmployeeName = (employeeId: number) => {
+    const employee = mockEmployees.find(emp => emp.id === employeeId);
+    return employee ? employee.name : '';
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -117,32 +138,22 @@ const Scheduling = () => {
               {timeSlots.map((time) => (
                 <div key={time} className="grid grid-cols-8 border-b border-border hover:bg-muted/30">
                   <div className="p-4 text-sm text-muted-foreground font-medium">{time}</div>
-                  {daysOfWeek.map((day, dayIndex) => (
-                    <div 
-                      key={`${day}-${time}`} 
-                      className="p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative"
-                    >
-                      {/* Sample shift blocks */}
-                      {time === "09:00" && dayIndex === 0 && (
-                        <div className={`p-2 rounded-lg text-xs ${getShiftTypeClass('morning')} shadow-shift`}>
-                          <div className="font-medium">Sarah Johnson</div>
-                          <div className="text-muted-foreground">09:00 - 17:00</div>
-                        </div>
-                      )}
-                      {time === "11:00" && dayIndex === 0 && (
-                        <div className={`p-2 rounded-lg text-xs ${getShiftTypeClass('afternoon')} shadow-shift`}>
-                          <div className="font-medium">Mike Chen</div>
-                          <div className="text-muted-foreground">11:00 - 19:00</div>
-                        </div>
-                      )}
-                      {time === "17:00" && dayIndex === 1 && (
-                        <div className={`p-2 rounded-lg text-xs ${getShiftTypeClass('evening')} shadow-shift`}>
-                          <div className="font-medium">Emma Davis</div>
-                          <div className="text-muted-foreground">17:00 - 23:00</div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {daysOfWeek.map((day, dayIndex) => {
+                    const shift = getShiftForTimeSlot(time, dayIndex);
+                    return (
+                      <div 
+                        key={`${day}-${time}`} 
+                        className="p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative"
+                      >
+                        {shift && (
+                          <div className={`p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift`}>
+                            <div className="font-medium">{getEmployeeName(shift.employeeId)}</div>
+                            <div className="text-muted-foreground">{shift.startTime} - {shift.endTime}</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
