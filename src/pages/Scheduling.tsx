@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Clock, Users, Plus, Edit2, Trash2, Copy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Users, Plus, Edit2, Trash2, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Types
 type Employee = {
@@ -55,6 +56,7 @@ const GRID_END_MIN = GRID_START_MIN + GRID_TOTAL_MIN; // 24:00 (midnight)
 
 const Scheduling = () => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [asideCollapsed, setAsideCollapsed] = useState(false);
   const [hideLastName, setHideLastName] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
   const [draggingEmployeeId, setDraggingEmployeeId] = useState<number | null>(null);
@@ -415,39 +417,78 @@ const Scheduling = () => {
       {/* Main Content: Two-column layout */}
       <div className="flex flex-col md:flex-row gap-4">
         {/* Left Column: Employee Panel */}
-        <aside className="w-full md:w-72 md:sticky md:top-4 md:self-start md:max-h-[calc(100vh-160px)] md:overflow-y-auto">
+        <aside className={`w-full ${asideCollapsed ? 'md:w-16' : 'md:w-56 lg:w-64'} transition-all duration-300`}>
           <Card className="md:border-r">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Available Employees
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {mockEmployees.map((employee) => (
-                  <div
-                    key={employee.id}
-                    className={`flex items-center gap-3 p-3 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
-                      draggingEmployeeId === employee.id ? 'opacity-50' : ''
-                    }`}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, employee.id)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                      {employee.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{employee.name}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">{employee.role}</Badge>
-                        <span className="text-xs text-muted-foreground">{employee.maxHours}h max</span>
-                      </div>
-                    </div>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className={`flex items-center gap-2 ${asideCollapsed ? 'md:hidden' : ''}`}>
+                  <Users className="w-5 h-5" />
+                  <div className="flex flex-col leading-tight">
+                    <span>Available</span>
+                    <span>Employees</span>
                   </div>
-                ))}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 hidden md:flex"
+                  onClick={() => setAsideCollapsed(!asideCollapsed)}
+                >
+                  {asideCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </Button>
               </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <TooltipProvider>
+                <div className="space-y-2">
+                  {mockEmployees.map((employee) => (
+                    <div key={employee.id}>
+                      {asideCollapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white text-xs font-semibold cursor-grab active:cursor-grabbing transition-opacity hover:bg-gradient-primary/90 ${
+                                draggingEmployeeId === employee.id ? 'opacity-50' : ''
+                              }`}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, employee.id)}
+                              onDragEnd={handleDragEnd}
+                            >
+                              {employee.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <div className="text-xs">
+                              <p className="font-medium">{employee.name}</p>
+                              <p className="text-muted-foreground">{employee.role} • {employee.maxHours}h max</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2.5 p-2.5 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
+                            draggingEmployeeId === employee.id ? 'opacity-50' : ''
+                          }`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, employee.id)}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <div className="w-7 h-7 bg-gradient-primary rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                            {employee.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-xs truncate" title={employee.name}>{employee.name}</p>
+                            <div className="flex flex-col gap-0.5 mt-0.5">
+                              <Badge variant="secondary" className="text-xs h-4 px-1.5 w-fit">{employee.role}</Badge>
+                              <span className="text-xs text-muted-foreground">{employee.maxHours}h max</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </TooltipProvider>
             </CardContent>
           </Card>
         </aside>
