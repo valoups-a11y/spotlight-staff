@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Clock, Users, Plus, Edit2, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Users, Plus, Edit2, Trash2, Copy } from "lucide-react";
 
 // Types
 type Employee = {
@@ -46,6 +47,12 @@ const initialShifts: Shift[] = [
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(9 + i).padStart(2, '0')}:00`);
 
+// Constants for precise positioning
+const ROW_HEIGHT_PX = 60; // 1px per minute
+const GRID_START_MIN = 9 * 60; // 9:00 AM in minutes
+const GRID_TOTAL_MIN = 15 * 60; // 15 hours
+const GRID_END_MIN = GRID_START_MIN + GRID_TOTAL_MIN; // 24:00 (midnight)
+
 const Scheduling = () => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [hideLastName, setHideLastName] = useState(false);
@@ -53,12 +60,52 @@ const Scheduling = () => {
   const [draggingEmployeeId, setDraggingEmployeeId] = useState<number | null>(null);
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Enhanced drag and drop state
+  const [isDraggingShift, setIsDraggingShift] = useState(false);
+  const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragStartTime, setDragStartTime] = useState(0);
+  const [guideLineY, setGuideLineY] = useState<number | null>(null);
+  const [promptedEmployeeIdsThisWeek, setPromptedEmployeeIdsThisWeek] = useState<Set<number>>(new Set());
+  
+  // Duplication dialog state
+  const [duplicateDialogState, setDuplicateDialogState] = useState<{
+    open: boolean;
+    employeeId: number;
+    startTime: string;
+    endTime: string;
+    preselectedDays: number[];
+    sourceDay: number;
+  }>({
+    open: false,
+    employeeId: 0,
+    startTime: '',
+    endTime: '',
+    preselectedDays: [],
+    sourceDay: 0
+  });
+  
   const { toast } = useToast();
 
-  // Utility to convert time string to minutes since midnight
+  // Utility functions for precise positioning
   const timeToMinutes = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
+  };
+
+  const minutesToTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  };
+
+  const snapToFifteen = (minutes: number) => {
+    return Math.round(minutes / 15) * 15;
+  };
+
+  const clampToGrid = (minutes: number) => {
+    return Math.max(GRID_START_MIN, Math.min(GRID_END_MIN - 15, minutes));
   };
 
   // Helper functions
@@ -155,7 +202,7 @@ const Scheduling = () => {
     });
   };
 
-  // Drag and drop handlers
+  // Enhanced drag and drop handlers
   const handleDragStart = (e: React.DragEvent, employeeId: number) => {
     e.dataTransfer.setData('text/plain', employeeId.toString());
     setDraggingEmployeeId(employeeId);
@@ -163,37 +210,123 @@ const Scheduling = () => {
 
   const handleDragEnd = () => {
     setDraggingEmployeeId(null);
+    setGuideLineY(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, dayIndex: number) => {
     e.preventDefault();
+    if (!draggingEmployeeId) return;
+    
+    // Show guide line at snapped position
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const snappedMinutes = snapToFifteen(GRID_START_MIN + offsetY);
+    const guideY = snappedMinutes - GRID_START_MIN;
+    setGuideLineY(guideY);
   };
 
-  const handleDrop = (e: React.DragEvent, dayIndex: number, timeSlot: string) => {
+  const handleDrop = (e: React.DragEvent, dayIndex: number) => {
     e.preventDefault();
     const employeeId = parseInt(e.dataTransfer.getData('text/plain'));
     
-    const targetDate = getDateForDay(dayIndex);
-    const startHour = parseInt(timeSlot.split(':')[0]);
-    const endHour = Math.min(startHour + 4, 23); // Default 4-hour shift, max end at 23:00
+    // Calculate precise drop position
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const startMinutes = clampToGrid(snapToFifteen(GRID_START_MIN + offsetY));
+    const endMinutes = Math.min(startMinutes + 240, GRID_END_MIN); // 4 hour default
     
+    const targetDate = getDateForDay(dayIndex);
     const newShift: Shift = {
-      id: Date.now(), // Simple ID generation
+      id: Date.now(),
       employeeId,
       date: targetDate,
-      startTime: `${String(startHour).padStart(2, '0')}:00`,
-      endTime: `${String(endHour).padStart(2, '0')}:00`,
-      type: determineShiftType(`${String(startHour).padStart(2, '0')}:00`)
+      startTime: minutesToTime(startMinutes),
+      endTime: minutesToTime(endMinutes),
+      type: determineShiftType(minutesToTime(startMinutes))
     };
 
     setShifts(prev => [...prev, newShift]);
     setDraggingEmployeeId(null);
+    setGuideLineY(null);
+    
+    // Check if this is the first shift for this employee this week
+    const weekShifts = shifts.filter(shift => 
+      shift.employeeId === employeeId && 
+      getDateForDay(0) <= shift.date && 
+      shift.date <= getDateForDay(6)
+    );
+    
+    if (weekShifts.length === 0 && !promptedEmployeeIdsThisWeek.has(employeeId)) {
+      // Show duplication dialog
+      const preselectedDays = dayIndex < 5 ? 
+        Array.from({length: 5}, (_, i) => i).filter(i => i !== dayIndex) : // Weekdays excluding current
+        []; // Weekend - no preselection
+      
+      setDuplicateDialogState({
+        open: true,
+        employeeId,
+        startTime: minutesToTime(startMinutes),
+        endTime: minutesToTime(endMinutes),
+        preselectedDays,
+        sourceDay: dayIndex
+      });
+      
+      setPromptedEmployeeIdsThisWeek(prev => new Set([...prev, employeeId]));
+    }
     
     const employee = mockEmployees.find(emp => emp.id === employeeId);
     toast({
       title: "Shift Created",
       description: `Created shift for ${employee?.name} on ${targetDate}`
     });
+  };
+
+  // Shift moving handlers
+  const handleShiftPointerDown = (e: React.PointerEvent, shift: Shift) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsDraggingShift(true);
+    setDraggedShift(shift);
+    setDragStartY(e.clientY);
+    setDragStartTime(timeToMinutes(shift.startTime));
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleShiftPointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingShift || !draggedShift) return;
+    
+    const deltaY = e.clientY - dragStartY;
+    const newStartMinutes = clampToGrid(snapToFifteen(dragStartTime + deltaY));
+    const duration = timeToMinutes(draggedShift.endTime) - timeToMinutes(draggedShift.startTime);
+    const newEndMinutes = Math.min(newStartMinutes + duration, GRID_END_MIN);
+    
+    // Update shift immediately for live preview
+    setShifts(prev => prev.map(s => 
+      s.id === draggedShift.id ? {
+        ...s,
+        startTime: minutesToTime(newStartMinutes),
+        endTime: minutesToTime(newEndMinutes),
+        type: determineShiftType(minutesToTime(newStartMinutes))
+      } : s
+    ));
+    
+    setGuideLineY(newStartMinutes - GRID_START_MIN);
+  };
+
+  const handleShiftPointerUp = (e: React.PointerEvent) => {
+    if (!isDraggingShift) return;
+    
+    const deltaY = Math.abs(e.clientY - dragStartY);
+    if (deltaY < 4 && draggedShift) {
+      // Treat as click - open edit dialog
+      handleShiftClick(draggedShift);
+    }
+    
+    setIsDraggingShift(false);
+    setDraggedShift(null);
+    setGuideLineY(null);
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
   };
 
   // Edit shift handlers
@@ -336,51 +469,89 @@ const Scheduling = () => {
                 ))}
               </div>
 
-              {/* Time slots */}
-              {timeSlots.map((time) => (
-                <div key={time} className="grid border-b border-border hover:bg-muted/30" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
-                  <div className="p-2 text-xs text-muted-foreground font-medium">{time}</div>
-                  {daysOfWeek.map((day, dayIndex) => {
-                    const startingShifts = getShiftsStartingAtTime(time, dayIndex);
-                    return (
-                      <div 
-                        key={`${day}-${time}`} 
-                        className={`p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative ${
-                          draggingEmployeeId ? 'ring-1 ring-primary/20' : ''
-                        }`}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, dayIndex, time)}
-                      >
-                        {startingShifts.map((shift) => {
-                          const layout = dayLayouts[dayIndex].get(shift.id);
-                          if (!layout) return null;
-                          
-                          const { colIndex, totalColumns } = layout;
-                          const widthPercent = 100 / totalColumns;
-                          const leftPercent = colIndex * widthPercent;
-                          
-                          return (
-                            <div 
-                              key={shift.id}
-                              className={`absolute top-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20 cursor-pointer hover:ring-1 hover:ring-primary/40 transition-all`}
-                              style={{ 
-                                height: `${getShiftHeight(shift) - 8}px`,
-                                width: `${widthPercent - 1}%`,
-                                left: `${leftPercent + 0.5}%`
-                              }}
-                              onClick={() => handleShiftClick(shift)}
-                            >
-                              <div className="font-medium text-xs mb-1">{getEmployeeName(shift.employeeId)}</div>
-                              <div className="text-[10px] opacity-75">{shift.startTime}</div>
-                              <div className="text-[10px] opacity-75">{shift.endTime}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
+              {/* Grid container with time labels and day columns */}
+              <div className="grid" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr', height: `${GRID_TOTAL_MIN}px` }}>
+                {/* Time labels column */}
+                <div className="relative border-r border-border">
+                  {timeSlots.map((time, index) => (
+                    <div 
+                      key={time}
+                      className="absolute left-0 w-full p-2 text-xs text-muted-foreground font-medium border-b border-border/50"
+                      style={{ top: `${index * 60}px`, height: '60px' }}
+                    >
+                      {time}
+                    </div>
+                  ))}
                 </div>
-              ))}
+
+                {/* Day columns */}
+                {daysOfWeek.map((day, dayIndex) => {
+                  const dayShifts = shifts.filter(shift => shift.date === getDateForDay(dayIndex));
+                  const dayLayout = dayLayouts[dayIndex];
+                  
+                  return (
+                    <div 
+                      key={day}
+                      className={`relative border-l border-border transition-colors ${
+                        draggingEmployeeId ? 'ring-1 ring-primary/20 bg-primary/5' : 'hover:bg-muted/20'
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, dayIndex)}
+                      onDrop={(e) => handleDrop(e, dayIndex)}
+                    >
+                      {/* Hour grid lines */}
+                      {timeSlots.map((_, index) => (
+                        <div 
+                          key={index}
+                          className="absolute left-0 w-full border-b border-border/30"
+                          style={{ top: `${index * 60}px`, height: '60px' }}
+                        />
+                      ))}
+
+                      {/* Guide line during drag */}
+                      {guideLineY !== null && draggingEmployeeId && (
+                        <div 
+                          className="absolute left-0 w-full h-0.5 bg-primary/60 z-20 pointer-events-none"
+                          style={{ top: `${guideLineY}px` }}
+                        />
+                      )}
+
+                      {/* Shifts */}
+                      {dayShifts.map((shift) => {
+                        const layout = dayLayout.get(shift.id);
+                        if (!layout) return null;
+                        
+                        const { colIndex, totalColumns } = layout;
+                        const startY = timeToMinutes(shift.startTime) - GRID_START_MIN;
+                        const height = timeToMinutes(shift.endTime) - timeToMinutes(shift.startTime);
+                        const widthPercent = 100 / totalColumns;
+                        const leftPercent = colIndex * widthPercent;
+                        
+                        return (
+                          <div 
+                            key={shift.id}
+                            className={`absolute p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20 cursor-move hover:ring-1 hover:ring-primary/40 transition-all select-none ${
+                              isDraggingShift && draggedShift?.id === shift.id ? 'opacity-70' : ''
+                            }`}
+                            style={{ 
+                              top: `${startY}px`,
+                              height: `${height}px`,
+                              width: `${widthPercent - 2}%`,
+                              left: `${leftPercent + 1}%`
+                            }}
+                            onPointerDown={(e) => handleShiftPointerDown(e, shift)}
+                            onPointerMove={handleShiftPointerMove}
+                            onPointerUp={handleShiftPointerUp}
+                          >
+                            <div className="font-medium text-xs mb-1">{getEmployeeName(shift.employeeId)}</div>
+                            <div className="text-[10px] opacity-75">{shift.startTime}</div>
+                            <div className="text-[10px] opacity-75">{shift.endTime}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -515,6 +686,96 @@ const Scheduling = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Shift Dialog */}
+      <Dialog open={duplicateDialogState.open} onOpenChange={(open) => setDuplicateDialogState({...duplicateDialogState, open})}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-4 h-4" />
+              Duplicate Shift to Other Days
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Created shift for {mockEmployees.find(emp => emp.id === duplicateDialogState.employeeId)?.name} 
+                from {duplicateDialogState.startTime} to {duplicateDialogState.endTime}.
+              </p>
+              <p className="text-sm font-medium">Would you like to duplicate this shift to other days?</p>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Select days to duplicate to:</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {daysOfWeek.map((day, dayIndex) => {
+                  const isSourceDay = dayIndex === duplicateDialogState.sourceDay;
+                  const isPreselected = duplicateDialogState.preselectedDays.includes(dayIndex);
+                  
+                  return (
+                    <div key={day} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`day-${dayIndex}`}
+                        checked={isSourceDay ? true : isPreselected}
+                        disabled={isSourceDay}
+                        onCheckedChange={(checked) => {
+                          if (isSourceDay) return;
+                          const newDays = checked 
+                            ? [...duplicateDialogState.preselectedDays, dayIndex]
+                            : duplicateDialogState.preselectedDays.filter(d => d !== dayIndex);
+                          setDuplicateDialogState({
+                            ...duplicateDialogState,
+                            preselectedDays: newDays
+                          });
+                        }}
+                      />
+                      <Label 
+                        htmlFor={`day-${dayIndex}`}
+                        className={`text-sm ${isSourceDay ? 'text-muted-foreground' : ''}`}
+                      >
+                        {day} {isSourceDay && '(current)'}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setDuplicateDialogState({...duplicateDialogState, open: false})}
+              >
+                Skip
+              </Button>
+              <Button 
+                onClick={() => {
+                  // Create duplicate shifts
+                  const newShifts = duplicateDialogState.preselectedDays.map(dayIndex => ({
+                    id: Date.now() + dayIndex, // Ensure unique IDs
+                    employeeId: duplicateDialogState.employeeId,
+                    date: getDateForDay(dayIndex),
+                    startTime: duplicateDialogState.startTime,
+                    endTime: duplicateDialogState.endTime,
+                    type: determineShiftType(duplicateDialogState.startTime)
+                  }));
+                  
+                  setShifts(prev => [...prev, ...newShifts]);
+                  setDuplicateDialogState({...duplicateDialogState, open: false});
+                  
+                  toast({
+                    title: "Shifts Duplicated",
+                    description: `Created ${newShifts.length} additional shifts`
+                  });
+                }}
+                disabled={duplicateDialogState.preselectedDays.length === 0}
+              >
+                Duplicate ({duplicateDialogState.preselectedDays.length} days)
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
