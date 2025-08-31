@@ -412,43 +412,49 @@ const Scheduling = () => {
         </div>
       </div>
 
-      {/* Employee Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Available Employees
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 flex-wrap">
-            {mockEmployees.map((employee) => (
-              <div
-                key={employee.id}
-                className={`flex items-center gap-3 p-3 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
-                  draggingEmployeeId === employee.id ? 'opacity-50' : ''
-                }`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, employee.id)}
-                onDragEnd={handleDragEnd}
-              >
-                <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                  {employee.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{employee.name}</p>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">{employee.role}</Badge>
-                    <span className="text-xs text-muted-foreground">{employee.maxHours}h max</span>
+      {/* Main Content: Two-column layout */}
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Left Column: Employee Panel */}
+        <aside className="w-full md:w-72 md:sticky md:top-4 md:self-start md:max-h-[calc(100vh-160px)] md:overflow-y-auto">
+          <Card className="md:border-r">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Available Employees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {mockEmployees.map((employee) => (
+                  <div
+                    key={employee.id}
+                    className={`flex items-center gap-3 p-3 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
+                      draggingEmployeeId === employee.id ? 'opacity-50' : ''
+                    }`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, employee.id)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                      {employee.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{employee.name}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">{employee.role}</Badge>
+                        <span className="text-xs text-muted-foreground">{employee.maxHours}h max</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </aside>
 
-      {/* Schedule Grid */}
+        {/* Right Column: Schedule Grid and Legend */}
+        <main className="flex-1 space-y-4">
+          {/* Schedule Grid */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -778,6 +784,8 @@ const Scheduling = () => {
           </div>
         </DialogContent>
       </Dialog>
+        </main>
+      </div>
     </div>
   );
 };
