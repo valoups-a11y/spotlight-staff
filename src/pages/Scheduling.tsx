@@ -57,7 +57,7 @@ const GRID_TOTAL_MIN = 15 * 60; // 15 hours
 const GRID_END_MIN = GRID_START_MIN + GRID_TOTAL_MIN; // 24:00 (midnight)
 
 const Scheduling = () => {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [currentWeek, setCurrentWeek] = useState(new Date('2024-01-15')); // Set to show existing mock data
   const [asideCollapsed, setAsideCollapsed] = useState(false);
   const [hideLastName, setHideLastName] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
