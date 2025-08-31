@@ -417,7 +417,7 @@ const Scheduling = () => {
       {/* Main Content: Two-column layout */}
       <div className="flex flex-col md:flex-row gap-4">
         {/* Left Column: Employee Panel */}
-        <aside className={`w-full ${asideCollapsed ? 'md:w-16' : 'md:w-56 lg:w-64'} transition-all duration-300`}>
+        <aside className={`relative w-full ${asideCollapsed ? 'md:w-16' : 'md:w-56 lg:w-64'} transition-all duration-300`}>
           <Card className="md:border-r">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -507,7 +507,7 @@ const Scheduling = () => {
           <div className="overflow-x-auto">
             <div className="min-w-[1000px]">
               {/* Header row */}
-              <div className="grid border-b border-border" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 grid border-b border-border" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
                 <div className="p-2 font-medium text-muted-foreground text-sm">Time</div>
                 {daysOfWeek.map((day) => (
                   <div key={day} className="p-4 font-medium text-center border-l border-border">

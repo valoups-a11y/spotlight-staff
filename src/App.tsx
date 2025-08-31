@@ -33,7 +33,7 @@ const App = () => (
               </header>
 
               {/* Main content */}
-              <main className="flex-1 overflow-auto">
+              <main className="flex-1">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/scheduling" element={<Scheduling />} />
