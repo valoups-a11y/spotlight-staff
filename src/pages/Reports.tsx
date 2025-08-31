@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { BarChart3, Download, TrendingUp, Clock, DollarSign } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 // Mock data for reports
 const mockReports = [
@@ -44,9 +48,97 @@ const mockReports = [
 ];
 
 const Reports = () => {
+  const { toast } = useToast();
   const totalNormalHours = mockReports.reduce((sum, emp) => sum + emp.normalHours, 0);
   const totalOvertimeHours = mockReports.reduce((sum, emp) => sum + emp.overtimeHours, 0);
   const totalPayroll = mockReports.reduce((sum, emp) => sum + emp.totalPay, 0);
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text("Employee Reports & Analytics", 20, 20);
+    
+    // Add date range
+    doc.setFontSize(12);
+    doc.text("Weekly overview for Jan 15 - Jan 21, 2024", 20, 30);
+    
+    // Add summary
+    doc.setFontSize(14);
+    doc.text("Summary", 20, 45);
+    doc.setFontSize(10);
+    doc.text(`Total Hours: ${totalNormalHours + totalOvertimeHours}`, 20, 55);
+    doc.text(`Normal Hours: ${totalNormalHours}`, 20, 62);
+    doc.text(`Overtime Hours: ${totalOvertimeHours}`, 20, 69);
+    doc.text(`Total Payroll: $${totalPayroll.toLocaleString()}`, 20, 76);
+    
+    // Add table
+    const tableData = mockReports.map(emp => [
+      emp.employeeName,
+      emp.role,
+      `${emp.normalHours}h`,
+      `${emp.overtimeHours}h`,
+      `${emp.totalHours}h`,
+      `$${emp.hourlyRate}/h`,
+      `$${emp.totalPay.toLocaleString()}`
+    ]);
+    
+    autoTable(doc, {
+      startY: 85,
+      head: [['Employee', 'Role', 'Normal Hours', 'Overtime', 'Total Hours', 'Hourly Rate', 'Total Pay']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [79, 70, 229] }
+    });
+    
+    doc.save('employee-reports.pdf');
+    toast({
+      title: "PDF Exported",
+      description: "Employee reports have been exported to PDF successfully.",
+    });
+  };
+
+  const handleExportExcel = () => {
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    
+    // Create reports worksheet
+    const reportsData = [
+      ['Employee', 'Role', 'Normal Hours', 'Overtime Hours', 'Total Hours', 'Hourly Rate', 'Total Pay'],
+      ...mockReports.map(emp => [
+        emp.employeeName,
+        emp.role,
+        emp.normalHours,
+        emp.overtimeHours,
+        emp.totalHours,
+        emp.hourlyRate,
+        emp.totalPay
+      ])
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(reportsData);
+    XLSX.utils.book_append_sheet(wb, ws1, "Reports");
+    
+    // Create summary worksheet
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Total Hours', totalNormalHours + totalOvertimeHours],
+      ['Normal Hours', totalNormalHours],
+      ['Overtime Hours', totalOvertimeHours],
+      ['Total Payroll', totalPayroll],
+      ['Report Period', 'Jan 15 - Jan 21, 2024']
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, ws2, "Summary");
+    
+    // Save file
+    XLSX.writeFile(wb, 'employee-reports.xlsx');
+    toast({
+      title: "Excel Exported",
+      description: "Employee reports have been exported to Excel successfully.",
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -57,11 +149,11 @@ const Reports = () => {
           <p className="text-muted-foreground">Weekly overview for Jan 15 - Jan 21, 2024</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportPDF}>
             <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportExcel}>
             <Download className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
