@@ -415,194 +415,198 @@ const Scheduling = () => {
       </div>
 
       {/* Main Content: Two-column layout */}
-      <div className="flex flex-col md:flex-row gap-4">
-        {/* Left Column: Employee Panel */}
-        <aside className={`relative w-full ${asideCollapsed ? 'md:w-16' : 'md:w-56 lg:w-64'} transition-all duration-300`}>
-          <Card className="md:border-r">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className={`flex items-center gap-2 ${asideCollapsed ? 'md:hidden' : ''}`}>
-                  <Users className="w-5 h-5" />
-                  <div className="flex flex-col leading-tight">
-                    <span>Available</span>
-                    <span>Employees</span>
-                  </div>
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hidden md:flex"
-                  onClick={() => setAsideCollapsed(!asideCollapsed)}
-                >
-                  {asideCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <TooltipProvider>
-                <div className="space-y-2">
-                  {mockEmployees.map((employee) => (
-                    <div key={employee.id}>
-                      {asideCollapsed ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={`w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white text-xs font-semibold cursor-grab active:cursor-grabbing transition-opacity hover:bg-gradient-primary/90 ${
-                                draggingEmployeeId === employee.id ? 'opacity-50' : ''
-                              }`}
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, employee.id)}
-                              onDragEnd={handleDragEnd}
-                            >
+      <div className="flex gap-4 h-[calc(100vh-232px)]"> {/* Fixed height container */}
+        {/* Left Column: Sticky Employee Panel */}
+        <aside className={`flex-shrink-0 ${asideCollapsed ? 'w-16' : 'w-56 lg:w-64'} transition-all duration-300`}>
+          <div className="sticky top-20 h-[calc(100vh-312px)] overflow-y-auto">
+            <Card className="border-r">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className={`flex items-center gap-2 ${asideCollapsed ? 'hidden' : ''}`}>
+                    <Users className="w-5 h-5" />
+                    <div className="flex flex-col leading-tight">
+                      <span>Available</span>
+                      <span>Employees</span>
+                    </div>
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setAsideCollapsed(!asideCollapsed)}
+                  >
+                    {asideCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <TooltipProvider>
+                  <div className="space-y-2">
+                    {mockEmployees.map((employee) => (
+                      <div key={employee.id}>
+                        {asideCollapsed ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white text-xs font-semibold cursor-grab active:cursor-grabbing transition-opacity hover:bg-gradient-primary/90 ${
+                                  draggingEmployeeId === employee.id ? 'opacity-50' : ''
+                                }`}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, employee.id)}
+                                onDragEnd={handleDragEnd}
+                              >
+                                {employee.name.split(' ').map(n => n[0]).join('')}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <div className="text-xs">
+                                <p className="font-medium">{employee.name}</p>
+                                <p className="text-muted-foreground">{employee.role} • {employee.maxHours}h max</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <div
+                            className={`flex items-center gap-2.5 p-2.5 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
+                              draggingEmployeeId === employee.id ? 'opacity-50' : ''
+                            }`}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, employee.id)}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <div className="w-7 h-7 bg-gradient-primary rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                               {employee.name.split(' ').map(n => n[0]).join('')}
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <div className="text-xs">
-                              <p className="font-medium">{employee.name}</p>
-                              <p className="text-muted-foreground">{employee.role} • {employee.maxHours}h max</p>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <div
-                          className={`flex items-center gap-2.5 p-2.5 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
-                            draggingEmployeeId === employee.id ? 'opacity-50' : ''
-                          }`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, employee.id)}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <div className="w-7 h-7 bg-gradient-primary rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                            {employee.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-xs truncate" title={employee.name}>{employee.name}</p>
-                            <div className="flex flex-col gap-0.5 mt-0.5">
-                              <Badge variant="secondary" className="text-xs h-4 px-1.5 w-fit">{employee.role}</Badge>
-                              <span className="text-xs text-muted-foreground">{employee.maxHours}h max</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-xs truncate" title={employee.name}>{employee.name}</p>
+                              <div className="flex flex-col gap-0.5 mt-0.5">
+                                <Badge variant="secondary" className="text-xs h-4 px-1.5 w-fit">{employee.role}</Badge>
+                                <span className="text-xs text-muted-foreground">{employee.maxHours}h max</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </TooltipProvider>
-            </CardContent>
-          </Card>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </TooltipProvider>
+              </CardContent>
+            </Card>
+          </div>
         </aside>
 
-        {/* Right Column: Schedule Grid and Legend */}
+        {/* Right Column: Scrollable Schedule Grid */}
         <main className="flex-1 space-y-4">
           {/* Schedule Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Schedule Grid
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <div className="min-w-[1000px]">
-              {/* Header row */}
-              <div className="sticky top-16 z-40 h-12 grid items-center bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border-b border-border shadow-sm" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
-                <div className="px-2 font-medium text-muted-foreground text-sm flex items-center h-full">Time</div>
-                {daysOfWeek.map((day) => (
-                  <div key={day} className="p-4 font-medium text-center border-l border-border">
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* Grid container with time labels and day columns */}
-              <div className="grid pt-12" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr', height: `${GRID_TOTAL_MIN}px` }}>
-                {/* Time labels column */}
-                <div className="relative border-r border-border">
-                  {timeSlots.map((time, index) => (
-                    <div 
-                      key={time}
-                      className="absolute left-0 w-full p-2 text-xs text-muted-foreground font-medium border-b border-border/50"
-                      style={{ top: `${index * 60}px`, height: '60px' }}
-                    >
-                      {time}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Day columns */}
-                {daysOfWeek.map((day, dayIndex) => {
-                  const dayShifts = shifts.filter(shift => shift.date === getDateForDay(dayIndex));
-                  const dayLayout = dayLayouts[dayIndex];
-                  
-                  return (
-                    <div 
-                      key={day}
-                      className={`relative border-l border-border transition-colors ${
-                        draggingEmployeeId ? 'ring-1 ring-primary/20 bg-primary/5' : 'hover:bg-muted/20'
-                      }`}
-                      onDragOver={(e) => handleDragOver(e, dayIndex)}
-                      onDrop={(e) => handleDrop(e, dayIndex)}
-                    >
-                      {/* Hour grid lines */}
-                      {timeSlots.map((_, index) => (
-                        <div 
-                          key={index}
-                          className="absolute left-0 w-full border-b border-border/30"
-                          style={{ top: `${index * 60}px`, height: '60px' }}
-                        />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Schedule Grid
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[calc(100vh-312px)] overflow-y-auto">
+                <div className="overflow-x-auto">
+                  <div className="min-w-[1000px]">
+                    {/* Header row - sticky within scroll container */}
+                    <div className="sticky top-0 z-40 h-12 grid items-center bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border-b border-border shadow-sm" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+                      <div className="px-2 font-medium text-muted-foreground text-sm flex items-center h-full">Time</div>
+                      {daysOfWeek.map((day) => (
+                        <div key={day} className="p-4 font-medium text-center border-l border-border">
+                          {day}
+                        </div>
                       ))}
-
-                      {/* Guide line during drag */}
-                      {guideLineY !== null && draggingEmployeeId && (
-                        <div 
-                          className="absolute left-0 w-full h-0.5 bg-primary/60 z-20 pointer-events-none"
-                          style={{ top: `${guideLineY}px` }}
-                        />
-                      )}
-
-                      {/* Shifts */}
-                      {dayShifts.map((shift) => {
-                        const layout = dayLayout.get(shift.id);
-                        if (!layout) return null;
-                        
-                        const { colIndex, totalColumns } = layout;
-                        const startY = timeToMinutes(shift.startTime) - GRID_START_MIN;
-                        const height = timeToMinutes(shift.endTime) - timeToMinutes(shift.startTime);
-                        const widthPercent = 100 / totalColumns;
-                        const leftPercent = colIndex * widthPercent;
-                        
-                        return (
-                          <div 
-                            key={shift.id}
-                            className={`absolute p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20 cursor-move hover:ring-1 hover:ring-primary/40 transition-all select-none ${
-                              isDraggingShift && draggedShift?.id === shift.id ? 'opacity-70' : ''
-                            }`}
-                            style={{ 
-                              top: `${startY}px`,
-                              height: `${height}px`,
-                              width: `${widthPercent - 2}%`,
-                              left: `${leftPercent + 1}%`
-                            }}
-                            onPointerDown={(e) => handleShiftPointerDown(e, shift)}
-                            onPointerMove={handleShiftPointerMove}
-                            onPointerUp={handleShiftPointerUp}
-                          >
-                            <div className="font-medium text-xs mb-1">{getEmployeeName(shift.employeeId)}</div>
-                            <div className="text-[10px] opacity-75">{shift.startTime}</div>
-                            <div className="text-[10px] opacity-75">{shift.endTime}</div>
-                          </div>
-                        );
-                      })}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
+                     {/* Grid container with time labels and day columns */}
+                     <div className="grid" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr', height: `${GRID_TOTAL_MIN}px` }}>
+                       {/* Time labels column */}
+                       <div className="relative border-r border-border">
+                         {timeSlots.map((time, index) => (
+                           <div 
+                             key={time}
+                             className="absolute left-0 w-full p-2 text-xs text-muted-foreground font-medium border-b border-border/50"
+                             style={{ top: `${index * 60}px`, height: '60px' }}
+                           >
+                             {time}
+                           </div>
+                         ))}
+                       </div>
+
+                       {/* Day columns */}
+                       {daysOfWeek.map((day, dayIndex) => {
+                         const dayShifts = shifts.filter(shift => shift.date === getDateForDay(dayIndex));
+                         const dayLayout = dayLayouts[dayIndex];
+                         
+                         return (
+                           <div 
+                             key={day}
+                             className={`relative border-l border-border transition-colors ${
+                               draggingEmployeeId ? 'ring-1 ring-primary/20 bg-primary/5' : 'hover:bg-muted/20'
+                             }`}
+                             onDragOver={(e) => handleDragOver(e, dayIndex)}
+                             onDrop={(e) => handleDrop(e, dayIndex)}
+                           >
+                             {/* Hour grid lines */}
+                             {timeSlots.map((_, index) => (
+                               <div 
+                                 key={index}
+                                 className="absolute left-0 w-full border-b border-border/30"
+                                 style={{ top: `${index * 60}px`, height: '60px' }}
+                               />
+                             ))}
+
+                             {/* Guide line during drag */}
+                             {guideLineY !== null && draggingEmployeeId && (
+                               <div 
+                                 className="absolute left-0 w-full h-0.5 bg-primary/60 z-20 pointer-events-none"
+                                 style={{ top: `${guideLineY}px` }}
+                               />
+                             )}
+
+                             {/* Shifts */}
+                             {dayShifts.map((shift) => {
+                               const layout = dayLayout.get(shift.id);
+                               if (!layout) return null;
+                               
+                               const { colIndex, totalColumns } = layout;
+                               const startY = timeToMinutes(shift.startTime) - GRID_START_MIN;
+                               const height = timeToMinutes(shift.endTime) - timeToMinutes(shift.startTime);
+                               const widthPercent = 100 / totalColumns;
+                               const leftPercent = colIndex * widthPercent;
+                               
+                               return (
+                                 <div 
+                                   key={shift.id}
+                                   className={`absolute p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20 cursor-move hover:ring-1 hover:ring-primary/40 transition-all select-none ${
+                                     isDraggingShift && draggedShift?.id === shift.id ? 'opacity-70' : ''
+                                   }`}
+                                   style={{ 
+                                     top: `${startY}px`,
+                                     height: `${height}px`,
+                                     width: `${widthPercent - 2}%`,
+                                     left: `${leftPercent + 1}%`
+                                   }}
+                                   onPointerDown={(e) => handleShiftPointerDown(e, shift)}
+                                   onPointerMove={handleShiftPointerMove}
+                                   onPointerUp={handleShiftPointerUp}
+                                 >
+                                   <div className="font-medium text-xs mb-1">{getEmployeeName(shift.employeeId)}</div>
+                                   <div className="text-[10px] opacity-75">{shift.startTime}</div>
+                                   <div className="text-[10px] opacity-75">{shift.endTime}</div>
+                                 </div>
+                               );
+                             })}
+                           </div>
+                         );
+                       })}
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
 
       {/* Legend */}
       <Card>
