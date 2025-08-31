@@ -39,7 +39,7 @@ const Index = () => {
               View Schedule
             </NavLink>
           </Button>
-          <Button asChild variant="outline" className="border-white/30 text-white hover:bg-white/10">
+          <Button asChild variant="outline" className="border-white/30 text-accent-foreground bg-accent hover:bg-accent/80">
             <NavLink to="/employees">
               <Users className="w-4 h-4 mr-2" />
               Manage Staff
