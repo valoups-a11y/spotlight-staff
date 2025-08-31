@@ -8,7 +8,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { WeekSwitcher } from "@/components/WeekSwitcher";
-import { startOfWeek, endOfWeek, format } from "date-fns";
+import { startOfWeek, endOfWeek, format, subWeeks } from "date-fns";
 
 // Mock data for reports
 const mockReports = [
@@ -52,7 +52,7 @@ const mockReports = [
 
 const Reports = () => {
   const { toast } = useToast();
-  const [currentWeek, setCurrentWeek] = useState(new Date('2024-01-15')); // Set to match scheduling data
+  const [currentWeek, setCurrentWeek] = useState(subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1));
   
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
