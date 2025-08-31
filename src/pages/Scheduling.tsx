@@ -2,17 +2,39 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Clock, Users, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { ChevronLeft, ChevronRight, Clock, Users, Plus, Edit2, Trash2 } from "lucide-react";
+
+// Types
+type Employee = {
+  id: number;
+  name: string;
+  role: string;
+  maxHours: number;
+};
+
+type Shift = {
+  id: number;
+  employeeId: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: string;
+};
 
 // Mock data for scheduling
-const mockEmployees = [
+const mockEmployees: Employee[] = [
   { id: 1, name: "Sarah Johnson", role: "Manager", maxHours: 8 },
   { id: 2, name: "Mike Chen", role: "Chef", maxHours: 7 },
   { id: 3, name: "Emma Davis", role: "Waiter", maxHours: 6 },
   { id: 4, name: "Alex Wilson", role: "Waiter", maxHours: 6 },
 ];
 
-const mockShifts = [
+const initialShifts: Shift[] = [
   { id: 1, employeeId: 1, date: "2024-01-15", startTime: "09:00", endTime: "17:00", type: "morning" },
   { id: 2, employeeId: 2, date: "2024-01-15", startTime: "11:00", endTime: "19:00", type: "afternoon" },
   { id: 3, employeeId: 3, date: "2024-01-16", startTime: "17:00", endTime: "23:00", type: "evening" },
@@ -27,6 +49,11 @@ const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(9 + i).padStart
 const Scheduling = () => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [hideLastName, setHideLastName] = useState(false);
+  const [shifts, setShifts] = useState<Shift[]>(initialShifts);
+  const [draggingEmployeeId, setDraggingEmployeeId] = useState<number | null>(null);
+  const [editingShift, setEditingShift] = useState<Shift | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Utility to convert time string to minutes since midnight
   const timeToMinutes = (time: string) => {
@@ -34,10 +61,24 @@ const Scheduling = () => {
     return hours * 60 + minutes;
   };
 
+  // Helper functions
+  const getDateForDay = (dayIndex: number) => {
+    const baseDate = new Date('2024-01-15');
+    baseDate.setDate(baseDate.getDate() + dayIndex);
+    return baseDate.toISOString().split('T')[0];
+  };
+
+  const determineShiftType = (startTime: string) => {
+    const hour = parseInt(startTime.split(':')[0]);
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
+
   // Compute layout for overlapping shifts on a given day
   const computeDayLayout = (dayIndex: number) => {
-    const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16";
-    const dayShifts = mockShifts.filter(shift => shift.date === targetDate);
+    const targetDate = getDateForDay(dayIndex);
+    const dayShifts = shifts.filter(shift => shift.date === targetDate);
     
     // Convert shifts to intervals with minutes
     type IntervalType = {
@@ -105,12 +146,87 @@ const Scheduling = () => {
   };
 
   const getShiftsStartingAtTime = (time: string, dayIndex: number) => {
-    const targetDate = dayIndex === 0 ? "2024-01-15" : "2024-01-16";
+    const targetDate = getDateForDay(dayIndex);
     
-    return mockShifts.filter(shift => {
+    return shifts.filter(shift => {
       const currentHour = parseInt(time.split(':')[0]);
       const startHour = parseInt(shift.startTime.split(':')[0]);
       return shift.date === targetDate && currentHour === startHour;
+    });
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, employeeId: number) => {
+    e.dataTransfer.setData('text/plain', employeeId.toString());
+    setDraggingEmployeeId(employeeId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingEmployeeId(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, dayIndex: number, timeSlot: string) => {
+    e.preventDefault();
+    const employeeId = parseInt(e.dataTransfer.getData('text/plain'));
+    
+    const targetDate = getDateForDay(dayIndex);
+    const startHour = parseInt(timeSlot.split(':')[0]);
+    const endHour = Math.min(startHour + 4, 23); // Default 4-hour shift, max end at 23:00
+    
+    const newShift: Shift = {
+      id: Date.now(), // Simple ID generation
+      employeeId,
+      date: targetDate,
+      startTime: `${String(startHour).padStart(2, '0')}:00`,
+      endTime: `${String(endHour).padStart(2, '0')}:00`,
+      type: determineShiftType(`${String(startHour).padStart(2, '0')}:00`)
+    };
+
+    setShifts(prev => [...prev, newShift]);
+    setDraggingEmployeeId(null);
+    
+    const employee = mockEmployees.find(emp => emp.id === employeeId);
+    toast({
+      title: "Shift Created",
+      description: `Created shift for ${employee?.name} on ${targetDate}`
+    });
+  };
+
+  // Edit shift handlers
+  const handleShiftClick = (shift: Shift) => {
+    setEditingShift(shift);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleShiftUpdate = () => {
+    if (!editingShift) return;
+    
+    setShifts(prev => prev.map(shift => 
+      shift.id === editingShift.id ? editingShift : shift
+    ));
+    setIsEditDialogOpen(false);
+    setEditingShift(null);
+    
+    toast({
+      title: "Shift Updated",
+      description: "Shift has been successfully updated"
+    });
+  };
+
+  const handleShiftDelete = () => {
+    if (!editingShift) return;
+    
+    setShifts(prev => prev.filter(shift => shift.id !== editingShift.id));
+    setIsEditDialogOpen(false);
+    setEditingShift(null);
+    
+    toast({
+      title: "Shift Deleted",
+      description: "Shift has been successfully deleted"
     });
   };
 
@@ -176,8 +292,12 @@ const Scheduling = () => {
             {mockEmployees.map((employee) => (
               <div
                 key={employee.id}
-                className="flex items-center gap-3 p-3 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card"
+                className={`flex items-center gap-3 p-3 border border-border rounded-xl bg-card hover:bg-accent transition-colors cursor-grab active:cursor-grabbing shadow-card ${
+                  draggingEmployeeId === employee.id ? 'opacity-50' : ''
+                }`}
                 draggable
+                onDragStart={(e) => handleDragStart(e, employee.id)}
+                onDragEnd={handleDragEnd}
               >
                 <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
                   {employee.name.split(' ').map(n => n[0]).join('')}
@@ -225,7 +345,11 @@ const Scheduling = () => {
                     return (
                       <div 
                         key={`${day}-${time}`} 
-                        className="p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative"
+                        className={`p-2 border-l border-border min-h-[60px] hover:bg-accent/50 transition-colors relative ${
+                          draggingEmployeeId ? 'ring-1 ring-primary/20' : ''
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, dayIndex, time)}
                       >
                         {startingShifts.map((shift) => {
                           const layout = dayLayouts[dayIndex].get(shift.id);
@@ -238,12 +362,13 @@ const Scheduling = () => {
                           return (
                             <div 
                               key={shift.id}
-                              className={`absolute top-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20`}
+                              className={`absolute top-2 p-2 rounded-lg text-xs ${getShiftTypeClass(shift.type)} shadow-shift z-10 animate-fade-in border border-border/20 cursor-pointer hover:ring-1 hover:ring-primary/40 transition-all`}
                               style={{ 
                                 height: `${getShiftHeight(shift) - 8}px`,
                                 width: `${widthPercent - 1}%`,
                                 left: `${leftPercent + 0.5}%`
                               }}
+                              onClick={() => handleShiftClick(shift)}
                             >
                               <div className="font-medium text-xs mb-1">{getEmployeeName(shift.employeeId)}</div>
                               <div className="text-[10px] opacity-75">{shift.startTime}</div>
@@ -281,6 +406,117 @@ const Scheduling = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Shift Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="w-4 h-4" />
+              Edit Shift
+            </DialogTitle>
+          </DialogHeader>
+          {editingShift && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="employee">Employee</Label>
+                <Select
+                  value={editingShift.employeeId.toString()}
+                  onValueChange={(value) => setEditingShift({
+                    ...editingShift,
+                    employeeId: parseInt(value)
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockEmployees.map(employee => (
+                      <SelectItem key={employee.id} value={employee.id.toString()}>
+                        {employee.name} - {employee.role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={editingShift.startTime}
+                    onChange={(e) => setEditingShift({
+                      ...editingShift,
+                      startTime: e.target.value,
+                      type: determineShiftType(e.target.value)
+                    })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={editingShift.endTime}
+                    onChange={(e) => setEditingShift({
+                      ...editingShift,
+                      endTime: e.target.value
+                    })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="shiftType">Shift Type</Label>
+                <Select
+                  value={editingShift.type}
+                  onValueChange={(value) => setEditingShift({
+                    ...editingShift,
+                    type: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="evening">Evening</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {editingShift.startTime >= editingShift.endTime && (
+                <p className="text-sm text-destructive">End time must be after start time</p>
+              )}
+
+              <div className="flex justify-between gap-2 pt-4">
+                <Button
+                  variant="destructive"
+                  onClick={handleShiftDelete}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleShiftUpdate}
+                    disabled={editingShift.startTime >= editingShift.endTime}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
