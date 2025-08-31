@@ -507,7 +507,7 @@ const Scheduling = () => {
           <div className="overflow-x-auto">
             <div className="min-w-[1000px]">
               {/* Header row */}
-              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 grid border-b border-border" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+              <div className="sticky top-16 z-30 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 grid border-b border-border shadow-sm" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
                 <div className="p-2 font-medium text-muted-foreground text-sm">Time</div>
                 {daysOfWeek.map((day) => (
                   <div key={day} className="p-4 font-medium text-center border-l border-border">
