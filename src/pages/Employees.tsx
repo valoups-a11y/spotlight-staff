@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Users, Plus, Edit, Mail, Phone, Clock, DollarSign } from "lucide-react";
+import { Employee, EmployeeFormData } from "@/types/employee";
+import EmployeeForm from "@/components/employees/EmployeeForm";
+import { toast } from "sonner";
 
 // Mock data for employees
-const mockEmployees = [
+const mockEmployees: Employee[] = [
   {
     id: 1,
     name: "Sarah Johnson",
@@ -60,8 +61,10 @@ const mockEmployees = [
 ];
 
 const Employees = () => {
-  const [employees] = useState(mockEmployees);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -72,6 +75,43 @@ const Employees = () => {
     }
   };
 
+  const generateAvatar = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const addEmployee = (data: EmployeeFormData) => {
+    const newEmployee: Employee = {
+      id: Math.max(...employees.map(e => e.id)) + 1,
+      ...data,
+      avatar: generateAvatar(data.name)
+    };
+    setEmployees([...employees, newEmployee]);
+    setIsAddDialogOpen(false);
+    toast.success("Employee added successfully");
+  };
+
+  const updateEmployee = (data: EmployeeFormData) => {
+    if (!editingEmployee) return;
+    
+    const updatedEmployee: Employee = {
+      ...editingEmployee,
+      ...data,
+      avatar: generateAvatar(data.name)
+    };
+    
+    setEmployees(employees.map(emp => 
+      emp.id === editingEmployee.id ? updatedEmployee : emp
+    ));
+    setIsEditDialogOpen(false);
+    setEditingEmployee(null);
+    toast.success("Employee updated successfully");
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -80,41 +120,39 @@ const Employees = () => {
           <h2 className="text-2xl font-bold text-foreground">Employee Management</h2>
           <p className="text-muted-foreground">Manage staff profiles and work parameters</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary">
               <Plus className="w-4 h-4 mr-2" />
               Add Employee
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Add New Employee</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="Enter full name" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter email address" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Input id="role" placeholder="e.g., Waiter, Chef, Manager" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
-                <Input id="hourlyRate" type="number" placeholder="Enter hourly rate" />
-              </div>
-              <div className="flex gap-2">
-                <Button className="flex-1">Save Employee</Button>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
+            <EmployeeForm
+              mode="create"
+              onSubmit={addEmployee}
+              onCancel={() => setIsAddDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Employee</DialogTitle>
+            </DialogHeader>
+            <EmployeeForm
+              mode="edit"
+              employee={editingEmployee || undefined}
+              onSubmit={updateEmployee}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setEditingEmployee(null);
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -201,7 +239,11 @@ const Employees = () => {
                     </Badge>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleEditEmployee(employee)}
+                >
                   <Edit className="w-4 h-4" />
                 </Button>
               </div>
