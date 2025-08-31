@@ -507,8 +507,8 @@ const Scheduling = () => {
           <div className="overflow-x-auto">
             <div className="min-w-[1000px]">
               {/* Header row */}
-              <div className="sticky top-16 z-30 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 grid border-b border-border shadow-sm" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
-                <div className="p-2 font-medium text-muted-foreground text-sm">Time</div>
+              <div className="sticky top-16 z-40 h-12 grid items-center bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border-b border-border shadow-sm" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+                <div className="px-2 font-medium text-muted-foreground text-sm flex items-center h-full">Time</div>
                 {daysOfWeek.map((day) => (
                   <div key={day} className="p-4 font-medium text-center border-l border-border">
                     {day}
@@ -517,7 +517,7 @@ const Scheduling = () => {
               </div>
 
               {/* Grid container with time labels and day columns */}
-              <div className="grid" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr', height: `${GRID_TOTAL_MIN}px` }}>
+              <div className="grid pt-12" style={{ gridTemplateColumns: '60px 1fr 1fr 1fr 1fr 1fr 1fr 1fr', height: `${GRID_TOTAL_MIN}px` }}>
                 {/* Time labels column */}
                 <div className="relative border-r border-border">
                   {timeSlots.map((time, index) => (
