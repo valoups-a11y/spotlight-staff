@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight, Clock, Users, Plus, Edit2, Trash2, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { WeekSwitcher } from "@/components/WeekSwitcher";
+import { startOfWeek, addDays, format } from "date-fns";
 
 // Types
 type Employee = {
@@ -55,7 +57,7 @@ const GRID_TOTAL_MIN = 15 * 60; // 15 hours
 const GRID_END_MIN = GRID_START_MIN + GRID_TOTAL_MIN; // 24:00 (midnight)
 
 const Scheduling = () => {
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(new Date('2024-01-15')); // Set to show existing mock data
   const [asideCollapsed, setAsideCollapsed] = useState(false);
   const [hideLastName, setHideLastName] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
@@ -112,9 +114,9 @@ const Scheduling = () => {
 
   // Helper functions
   const getDateForDay = (dayIndex: number) => {
-    const baseDate = new Date('2024-01-15');
-    baseDate.setDate(baseDate.getDate() + dayIndex);
-    return baseDate.toISOString().split('T')[0];
+    const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Start on Monday
+    const targetDate = addDays(weekStart, dayIndex);
+    return format(targetDate, 'yyyy-MM-dd');
   };
 
   const determineShiftType = (startTime: string) => {
@@ -387,17 +389,10 @@ const Scheduling = () => {
           <p className="text-muted-foreground">Drag and drop to assign shifts</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="font-medium min-w-[200px] text-center">
-              Week of Jan 15 - Jan 21, 2024
-            </span>
-            <Button variant="outline" size="sm">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+          <WeekSwitcher 
+            currentWeek={currentWeek} 
+            onWeekChange={setCurrentWeek} 
+          />
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 

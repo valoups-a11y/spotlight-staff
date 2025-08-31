@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +7,8 @@ import { BarChart3, Download, TrendingUp, Clock, DollarSign } from "lucide-react
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { WeekSwitcher } from "@/components/WeekSwitcher";
+import { startOfWeek, endOfWeek, format } from "date-fns";
 
 // Mock data for reports
 const mockReports = [
@@ -49,6 +52,12 @@ const mockReports = [
 
 const Reports = () => {
   const { toast } = useToast();
+  const [currentWeek, setCurrentWeek] = useState(new Date('2024-01-15')); // Set to match scheduling data
+  
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekLabel = `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+  
   const totalNormalHours = mockReports.reduce((sum, emp) => sum + emp.normalHours, 0);
   const totalOvertimeHours = mockReports.reduce((sum, emp) => sum + emp.overtimeHours, 0);
   const totalPayroll = mockReports.reduce((sum, emp) => sum + emp.totalPay, 0);
@@ -62,7 +71,7 @@ const Reports = () => {
     
     // Add date range
     doc.setFontSize(12);
-    doc.text("Weekly overview for Jan 15 - Jan 21, 2024", 20, 30);
+    doc.text(`Weekly overview for ${weekLabel}`, 20, 30);
     
     // Add summary
     doc.setFontSize(14);
@@ -127,7 +136,7 @@ const Reports = () => {
       ['Normal Hours', totalNormalHours],
       ['Overtime Hours', totalOvertimeHours],
       ['Total Payroll', totalPayroll],
-      ['Report Period', 'Jan 15 - Jan 21, 2024']
+      ['Report Period', weekLabel]
     ];
     const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, ws2, "Summary");
@@ -146,9 +155,14 @@ const Reports = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Reports & Analytics</h2>
-          <p className="text-muted-foreground">Weekly overview for Jan 15 - Jan 21, 2024</p>
+          <p className="text-muted-foreground">Weekly overview for {weekLabel}</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-4">
+          <WeekSwitcher 
+            currentWeek={currentWeek} 
+            onWeekChange={setCurrentWeek} 
+          />
+          <div className="flex gap-3">
           <Button variant="outline" onClick={handleExportPDF}>
             <Download className="w-4 h-4 mr-2" />
             Export PDF
@@ -157,6 +171,7 @@ const Reports = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
+          </div>
         </div>
       </div>
 
